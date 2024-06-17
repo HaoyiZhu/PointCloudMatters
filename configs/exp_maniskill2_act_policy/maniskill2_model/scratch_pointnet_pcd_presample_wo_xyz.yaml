@@ -1,0 +1,44 @@
+# @package _global_
+defaults:
+  - override /data: maniskill2_act_pcd_dataset
+  - override /model: maniskill2_act_pcd_model
+  - override /paths: default
+
+task_name: scratch_pointnet_pcd_presample_wo_xyz
+
+data:
+  batch_size_train: 8
+  num_workers: 16
+  train:
+    transform_pcd:
+      - _target_: src.data.components.transformpcd.GridSamplePCD
+        grid_size: 0.005
+        hash_type: fnv
+        mode: train
+        return_grid_coord: true
+        return_displacement: false
+        keys:
+          - coord
+          - color
+      - _target_: src.data.components.transformpcd.NormalizeColorPCD
+      - _target_: src.data.components.transformpcd.ShufflePointPCD
+      - _target_: src.data.components.transformpcd.ToTensorPCD
+      - _target_: src.data.components.transformpcd.CollectPCD
+        keys:
+          - coord
+          - grid_coord
+        feat_keys:
+          - color
+
+model:
+  obs_mode: pointcloud
+  policy:
+    policy:
+    backbone:
+      _target_: src.models.components.pcd_encoder.pointnet.PointNet
+      in_channels: 3
+      num_classes: 0
+    pre_sample: true
+
+trainer:
+  accumulate_grad_batches: 2

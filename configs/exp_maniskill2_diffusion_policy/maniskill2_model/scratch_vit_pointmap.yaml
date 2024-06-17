@@ -1,0 +1,27 @@
+# @package _global_
+defaults:
+  - override /model: maniskill2_diffusion_policy_model
+  - override /paths: default
+
+task_name: scratch_vit_pointmap
+
+data:
+  train:
+    pointmap: true
+
+model:
+  obs_mode: pointcloud
+  policy:
+    shape_meta:
+      obs:
+        base_camera_rgb:
+          shape: [6, 128, 128]
+          type: rgb
+        qpos:
+          shape: [7]
+          type: low_dim
+    obs_encoder:
+      rgb_model:
+        _target_: src.models.components.img_encoder.vit.ViT
+        model_name: vit_base_patch16
+        channels: 6

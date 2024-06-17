@@ -1,0 +1,39 @@
+# @package _global_
+
+defaults:
+  - maniskill2_model:
+  - maniskill2_task:
+  - maniskill2_pcd_task:
+  - override /trainer: ddp
+  - override /callbacks: default
+  - override /paths: default
+  - override /hydra: default
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+hydra:
+  run:
+    dir: ${paths.log_dir}/${task_name}/runs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  sweep:
+    dir: ${paths.log_dir}/${task_name}/runs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: ""
+
+paths:
+  log_dir: ${paths.root_dir}/logs/maniskill2_dp/${model.env_id}
+
+trainer:
+  devices: 1
+  max_epochs: 1800
+  check_val_every_n_epoch: 100
+  accelerator: gpu
+  strategy: auto
+  # limit_val_batches: 0.0
+
+callbacks:
+  model_checkpoint:
+    monitor: val/mean_success
+    mode: max
+    filename: "epoch={epoch:03d}-val_mean_success={val/mean_success:.4f}"
+    save_top_k: 5
+  early_stopping: null

@@ -1,0 +1,52 @@
+# @package _global_
+
+# to execute this task use:
+# exp_maniskill2_diffusion_policy/maniskill2_task@maniskill2_task=StackCube
+
+defaults:
+  - override /data: maniskill2_act_rgbd_dataset
+  - override /model: maniskill2_act_model
+
+data:
+  pin_memory: true
+  train:
+    _target_: src.data.components.maniskill2.maniskill2_single_task_rgbd_act.ManiSkill2NullGoalSingleTaskACTRGBDDataset
+    dataset_file: data/maniskill2/demos/v0/rigid_body/PegInsertionSide-v0/trajectory.rgbd.pd_ee_delta_pose.h5
+    camera_names:
+      - base_camera
+    goal_cond_keys: null
+    chunk_size: 100
+
+model:
+  env_id: PegInsertionSide-v0
+  policy:
+    action_dim: 7
+    qpos_dim: 9
+    goal_cond_dim: 0
+  val_metrics:
+    metrics:
+      - _target_: torchmetrics.MeanMetric
+      - _target_: torchmetrics.MeanMetric
+      - _target_: torchmetrics.MeanMetric
+    input_keys:
+      - mean_success
+      - mean_grasp
+      - mean_align
+    output_keys:
+      - val/mean_success
+      - val/mean_grasp
+      - val/mean_align
+  best_val_metrics:
+    metrics:
+      - _target_: torchmetrics.MaxMetric
+      - _target_: torchmetrics.MaxMetric
+      - _target_: torchmetrics.MaxMetric
+    input_keys:
+      - val/mean_success
+      - val/mean_grasp
+      - val/mean_align
+    output_keys:
+      - val/mean_success
+      - val/mean_grasp
+      - val/mean_align
+  

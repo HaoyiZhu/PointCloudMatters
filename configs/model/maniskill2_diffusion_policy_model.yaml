@@ -1,0 +1,87 @@
+_target_: src.models.maniskill2_dp_bc_module.ManiSkill2DiffusionPolicyBCModule
+
+env_id: 
+obs_mode: rgbd
+shader_dir: ibl
+rt_samples_per_pixel: 32
+rt_use_denoiser: true
+use_stereo_depth: false
+
+optimizer:
+  type: AdamW
+  betas: [0.9, 0.95]
+  lr: 0.0001
+  weight_decay: 0.0001
+
+lr_scheduler: 
+  scheduler:
+    type: OneCycleLR
+    max_lr: ${model.optimizer.lr}
+    pct_start: 0.15
+    anneal_strategy: cos
+    div_factor: 100.0
+    final_div_factor: 1000.0
+  interval: step
+  frequency: 1
+
+policy:
+  _target_: src.models.components.diffusion_policy.diffusion_unet_image_policy.DiffusionUnetImagePolicy
+  shape_meta:
+  noise_scheduler:
+    _target_: diffusers.schedulers.scheduling_ddpm.DDPMScheduler
+    beta_end: 0.02
+    beta_schedule: squaredcos_cap_v2
+    beta_start: 0.0001
+    clip_sample: true
+    num_train_timesteps: 100
+    prediction_type: epsilon
+    variance_type: fixed_small
+  obs_encoder:
+    _target_: src.models.components.diffusion_policy.vision.multi_image_obs_encoder.MultiImageObsEncoder
+    rgb_model:
+    shape_meta: ${model.policy.shape_meta}
+    resize_shape: [256, 256]
+    crop_shape: [224, 224]
+    # constant center crop
+    random_crop: false
+    use_group_norm: false
+    share_rgb_model: true
+    imagenet_norm: false
+  horizon: ${data.train.chunk_size}
+  n_action_steps: 8
+  n_obs_steps: 2
+  num_inference_steps: 100
+  obs_as_global_cond: true
+  # crop_shape: null
+  diffusion_step_embed_dim: 128
+  down_dims: [512, 1024, 2048]
+  kernel_size: 5
+  n_groups: 8
+  cond_predict_scale: true
+
+train_metrics:
+  _target_: src.utils.metrics.Metrics
+  metrics:
+    - _target_: torchmetrics.MeanMetric
+  input_keys:
+    - loss
+  output_keys:
+    - train/loss
+
+val_metrics:
+  _target_: src.utils.metrics.Metrics
+  metrics:
+    - _target_: torchmetrics.MeanMetric
+  input_keys:
+    - mean_success
+  output_keys:
+    - val/mean_success
+
+best_val_metrics:
+  _target_: src.utils.metrics.Metrics
+  metrics:
+    - _target_: torchmetrics.MaxMetric
+  input_keys:
+    - val/mean_success
+  output_keys:
+    - val/mean_success

@@ -1,0 +1,24 @@
+# @package _global_
+defaults:
+  - override /data: maniskill2_act_pcd_dataset
+  - override /model: maniskill2_act_pcd_model
+  - override /paths: default
+
+task_name: scratch_spunet_pcd_presample
+
+data:
+  batch_size_train: 8
+  num_workers: 16
+
+model:
+  obs_mode: pointcloud
+  policy:
+    backbone:
+      _target_: src.models.components.pcd_encoder.spunet.SpUNet
+      in_channels: 6
+      num_classes: 512
+      pretrained_path: null
+    pre_sample: true
+
+trainer:
+  accumulate_grad_batches: 2

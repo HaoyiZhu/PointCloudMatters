@@ -1,0 +1,59 @@
+# @package _global_
+defaults:
+  - override /model: maniskill2_diffusion_policy_model
+  - override /paths: default
+
+task_name: scratch_pointnet_pcd_presample_wo_xyz
+
+data:
+  train:
+    transform_pcd:
+      - _targt_: src.data.components.transformpcd.GridSamplePCD
+        grid_size: 0.005
+        hash_type: fnv
+        mode: train
+        return_grid_coord: true
+        return_displacement: false
+        keys:
+          - coord
+          - color
+      - _targt_: src.data.components.transformpcd.NormalizeColorPCD
+      - _targt_: src.data.components.transformpcd.ShufflePointPCD
+      - _targt_: src.data.components.transformpcd.ToTensorPCD
+      - _targt_: src.data.components.transformpcd.CollectPCD
+        keys:
+          - coord
+          - grid_coord
+        feat_keys:
+          - color
+
+model:
+  obs_mode: pointcloud
+  policy:
+    shape_meta:
+      obs:
+        pcds:
+          shape: [3]
+          type: pcd
+        qpos:
+          shape: [7]
+          type: low_dim
+    obs_encoder:
+      _target_: src.models.components.diffusion_policy.vision.pcd_obs_encoder.PCDObsEncoder
+      shape_meta: ${model.policy.shape_meta}
+      pcd_model:
+        _target_: src.models.components.pcd_encoder.pointnet.PointNet
+        in_channels: 3
+        num_classes: 96
+        pretrained_path: null
+      share_pcd_model: true
+      n_obs_step: ${model.policy.n_obs_steps}
+      pcd_nsample: 16
+      pcd_npoints: 2048
+      use_mask: false
+      bg_ratio: 0.0
+      pcd_hidden_dim: 96
+      projector_layers: 1
+      projector_channels: [96, 128, 128]
+      pre_sample: true
+      in_channel: 3

@@ -1,0 +1,38 @@
+_target_: src.data.base_datamodule.BaseDataModule
+
+batch_size_train: 16
+batch_size_val: 1
+batch_size_test: 1
+num_workers: 16
+pin_memory: true
+train:
+  dataset_file: 
+  load_count: -1
+  goal_cond_keys: 
+  chunk_size: 100  # equal to horizon
+  camera_ids: [0]
+  point_num_per_cam: 16384  # 128 * 128
+  transform_pcd:
+    - _target_: src.data.components.transformpcd.GridSamplePCD
+      grid_size: 0.005
+      hash_type: fnv
+      mode: train
+      return_grid_coord: true
+      return_displacement: false
+      keys:
+        - coord
+        - color
+    - _target_: src.data.components.transformpcd.NormalizeColorPCD
+    - _target_: src.data.components.transformpcd.ShufflePointPCD
+    - _target_: src.data.components.transformpcd.ToTensorPCD
+    - _target_: src.data.components.transformpcd.CollectPCD
+      keys:
+        - coord
+        - grid_coord
+      feat_keys:
+        - color
+        - coord
+
+val:
+  _target_: src.data.components.misc.DummyDataset
+  size: 400  # 400 eval trials

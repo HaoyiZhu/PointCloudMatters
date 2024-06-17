@@ -1,0 +1,104 @@
+_target_: src.models.maniskill2_act_bc_module.ManiSkill2ACTBCModule
+
+env_id:
+obs_mode: rgbd
+shader_dir: ibl
+rt_samples_per_pixel: 32
+rt_use_denoiser: true
+use_stereo_depth: false
+temporal_agg: true
+
+optimizer:
+  type: AdamW
+  lr: 0.00005
+  weight_decay: 0.05
+
+lr_scheduler:
+  scheduler:
+    type: OneCycleLR
+    max_lr: ${model.optimizer.lr}
+    pct_start: 0.1
+    anneal_strategy: cos
+    div_factor: 100.0
+    final_div_factor: 1000.0
+  interval: step
+  frequency: 1
+
+policy:
+  _target_: src.models.components.act.act.ACT
+  freeze_backbone: false
+  backbone:
+    _target_: src.models.components.img_encoder.resnet.ResNetTorchVision
+    resnet_model: resnet50
+    pretrained: false
+    channels: 3
+  transformer:
+    _target_: src.models.components.act.transformer.Transformer
+    d_model: ${model.policy.hidden_dim}
+    dropout: 0.1
+    nhead: 8
+    dim_feedforward: 32
+    num_encoder_layers: 4
+    num_decoder_layers: 7
+    normalize_before: false
+    return_intermediate_dec: true
+  encoder:
+    _target_: src.models.components.act.transformer.TransformerEncoder
+    d_model: ${model.policy.hidden_dim}
+    dropout: ${model.policy.transformer.dropout}
+    nhead: ${model.policy.transformer.nhead}
+    dim_feedforward: ${model.policy.transformer.dim_feedforward}
+    num_layers: ${model.policy.transformer.num_encoder_layers} # 4 # TODO shared with VAE decoder
+    normalize_before: ${model.policy.transformer.normalize_before}
+    activation: relu
+  hidden_dim: 512
+  num_queries: ${data.train.chunk_size}
+  num_cameras: 1
+  action_dim:
+  qpos_dim:
+  env_state_dim: 0 # for state_only case
+  latent_dim: 32
+  action_loss:
+    _target_: torch.nn.MSELoss
+    reduction: none
+  klloss:
+    _target_: src.models.components.loss.misc.KLDivergence
+  kl_weight: 10.0
+  goal_cond_dim: # gaol position by default
+  obs_feature_pos_embedding:
+    _target_: src.models.components.act.positional_encoding.PositionEmbeddingSine # or, PositionEmbeddingLearned
+    num_pos_feats: ${eval:'${model.policy.hidden_dim} // 2'}
+    normalize: true
+
+train_metrics:
+  _target_: src.utils.metrics.Metrics
+  metrics:
+    - _target_: torchmetrics.MeanMetric
+    - _target_: torchmetrics.MeanMetric
+    - _target_: torchmetrics.MeanMetric
+  input_keys:
+    - loss
+    - action_loss
+    - kl_loss
+  output_keys:
+    - train/loss
+    - train/action_loss
+    - train/kl_loss
+
+val_metrics:
+  _target_: src.utils.metrics.Metrics
+  metrics:
+    - _target_: torchmetrics.MeanMetric
+  input_keys:
+    - mean_success
+  output_keys:
+    - val/mean_success
+
+best_val_metrics:
+  _target_: src.utils.metrics.Metrics
+  metrics:
+    - _target_: torchmetrics.MaxMetric
+  input_keys:
+    - val/mean_success
+  output_keys:
+    - val/mean_success

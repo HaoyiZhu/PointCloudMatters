@@ -1,0 +1,26 @@
+# @package _global_
+
+# to execute this task use:
+# exp_maniskill2_diffusion_policy/maniskill2_task@maniskill2_task=StackCube
+
+defaults:
+  - override /data: maniskill2_act_rgbd_dataset
+  - override /model: maniskill2_act_model
+
+data:
+  pin_memory: true
+  train:
+    _target_: src.data.components.maniskill2.maniskill2_single_task_rgbd_act.ManiSkill2GoalPosSingleTaskACTRGBDDataset
+    dataset_file: data/maniskill2/demos/v0/soft_body/Excavate-v0/trajectory.rgbd.pd_ee_delta_pose.h5
+    camera_names:
+      - base_camera
+    goal_cond_keys:
+      - target
+    chunk_size: 100
+
+model:
+  env_id: Excavate-v0
+  policy:
+    action_dim: 6
+    qpos_dim: 7
+    goal_cond_dim: 1

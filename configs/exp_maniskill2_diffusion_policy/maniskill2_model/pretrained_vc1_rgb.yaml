@@ -1,0 +1,22 @@
+# @package _global_
+defaults:
+  - override /model: maniskill2_diffusion_policy_model
+  - override /paths: default
+
+task_name: pretrained_vc1_rgb
+
+model:
+  policy:
+    shape_meta:
+      obs:
+        base_camera_rgb:
+          shape: [3, 128, 128]
+          type: rgb
+        qpos:
+          shape: [7]
+          type: low_dim
+    obs_encoder:
+      rgb_model:
+        _target_: src.models.components.img_encoder.vit.VC1ViT
+        model_name: vit_base_patch16
+        channels: 3

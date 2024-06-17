@@ -1,0 +1,29 @@
+# @package _global_
+defaults:
+  - override /data: maniskill2_diffusion_policy_rgbd_dataset
+  - override /model: maniskill2_diffusion_policy_model
+  - override /paths: default
+
+task_name: pretrained_multimae_rgbd
+
+data:
+  train:
+    include_depth: true
+
+model:
+  policy:
+    shape_meta:
+      obs:
+        base_camera_rgb:
+          shape: [3, 128, 128]
+          type: rgb
+        base_camera_depth:
+          shape: [1, 128, 128]
+          type: depth
+        qpos:
+          shape: [7]
+          type: low_dim
+    obs_encoder:
+      rgb_model:
+        _target_: src.models.components.img_encoder.multivit.MultiMAEModel
+      use_depth: true

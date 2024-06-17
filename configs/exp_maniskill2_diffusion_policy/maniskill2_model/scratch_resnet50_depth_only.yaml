@@ -1,0 +1,33 @@
+# @package _global_
+defaults:
+  - override /model: maniskill2_diffusion_policy_model
+  - override /paths: default
+
+task_name: scratch_resnet50_depth_only
+
+data:
+  train:
+    include_depth: true
+
+model:
+  policy:
+    shape_meta:
+      obs:
+        base_camera_rgb:
+          shape: [3, 128, 128]
+          type: rgb
+        base_camera_depth:
+          shape: [1, 128, 128]
+          type: depth
+        qpos:
+          shape: [7]
+          type: low_dim
+    obs_encoder:
+      use_depth: true
+      only_depth: true
+      rgb_model:
+        _target_: src.models.components.img_encoder.resnet.ResNetTorchVision
+        resnet_model: resnet50
+        pretrained: false
+        channels: 1
+        avg_pool: true

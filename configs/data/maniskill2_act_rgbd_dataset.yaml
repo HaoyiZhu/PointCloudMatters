@@ -1,0 +1,20 @@
+_target_: src.data.base_datamodule.BaseDataModule
+
+batch_size_train: 16
+batch_size_val: 1
+batch_size_test: 1
+num_workers: 16
+pin_memory: true
+train:
+  dataset_file: 
+  load_count: -1
+  camera_names:
+    - base_camera
+  include_depth: false
+  scale_rgb_only: false
+  goal_cond_keys: 
+  chunk_size: 100
+
+val:
+  _target_: src.data.components.misc.DummyDataset
+  size: 400  # 400 eval trials

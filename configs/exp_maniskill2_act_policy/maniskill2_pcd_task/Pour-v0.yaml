@@ -1,0 +1,23 @@
+# @package _global_
+
+# to execute this task use:
+# exp_maniskill2_diffusion_policy/maniskill2_task@maniskill2_task=StackCube
+
+defaults:
+  - override /data: maniskill2_act_pcd_dataset
+
+data:
+  pin_memory: true
+  train:
+    _target_: src.data.components.maniskill2.maniskill2_single_task_pcd_act.ManiSkill2GoalPosSingleTaskACTPCDDataset
+    dataset_file: data/maniskill2/demos/v0/soft_body/Pour-v0/trajectory.pointcloud.pd_ee_delta_pose.h5
+    goal_cond_keys:
+      - target
+
+model:
+  env_id: Pour-v0
+  obs_mode: pointcloud
+  policy:
+    action_dim: 7
+    qpos_dim: 9
+    goal_cond_dim: 1

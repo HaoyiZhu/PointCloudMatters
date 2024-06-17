@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+  - override /model: maniskill2_act_model
+  - override /paths: default
+
+task_name: scratch_vit_depth_only
+
+data:
+  batch_size_train: 16
+  num_workers: 16
+  train:
+    include_depth: true
+    only_depth: true
+
+model:
+  policy:
+    backbone:
+      _target_: src.models.components.img_encoder.vit.ViT
+      model_name: vit_base_patch16
+      pretrained: false
+      channels: 1
