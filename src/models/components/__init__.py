@@ -7,6 +7,7 @@ from .act import (
     TransformerDecoder,
     TransformerEncoder,
 )
+from .diffusion_policy import DiffusionUnetImagePolicy
 from .img_encoder import (
     MultiMAEModel,
     MultiViTModel,
@@ -16,12 +17,3 @@ from .img_encoder import (
     ViT,
 )
 from .pcd_encoder import PointNet, SpUNet
-
-try:
-    from .diffusion_policy import (
-        DiffusionTransformerHybridImagePolicy,
-        DiffusionUnetHybridImagePolicy,
-        DiffusionUnetImagePolicy,
-    )
-except:
-    print("[Warning] DiffusionPolicy not imported")
