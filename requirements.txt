@@ -25,7 +25,6 @@ black==24.4.2
 torchmetrics>=0.11.4
 torch-geometric==2.5.3
 rootutils==1.0.7
-timm==0.9.10
 imageio==2.34.1
 python-dotenv==1.0.1
 zarr==2.18.2

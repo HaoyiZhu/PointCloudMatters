@@ -11,8 +11,7 @@ from lightning import LightningModule
 from mani_skill2.utils.wrappers import RecordEpisode
 
 from src import utils as U
-
-# from src.maniskill2_env import custom_envs
+from src.envs import custom_maniskill2
 
 
 class TemporalAgg:

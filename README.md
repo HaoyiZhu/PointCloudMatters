@@ -197,6 +197,10 @@ Coming soon.
   ```bash
   python src/validate.py exp_maniskill2_act_policy=base exp_maniskill2_act_policy/maniskill2_pcd_task@maniskill2_pcd_task=${task} exp_maniskill2_act_policy/maniskill2_model@maniskill2_model=${model} ckpt_path=${path/to/checkpoint}
   ```
+
+- Zero-shot generalization evaluation:
+  
+  Coming soon.
   
 Detailed configurations can be found in [configs/exp_maniskill2_act_policy](configs/exp_maniskill2_act_policy) and [configs/exp_maniskill2_diffusion_policy](configs/exp_maniskill2_diffusion_policy).
 
