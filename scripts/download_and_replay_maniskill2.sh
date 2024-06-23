@@ -38,8 +38,8 @@ python -m mani_skill2.trajectory.replay_trajectory \
 done
 done
 
-python -m mani_skill2.utils.precompile_mpm
 export CUDA_VISIBLE_DEVICES=0
+python -m mani_skill2.utils.precompile_mpm
 for soft_task in {"Hang-v0","Pour-v0","Excavate-v0","Fill-v0"}
 do
 for obs_mode in {"rgbd","pointcloud"}
@@ -65,10 +65,10 @@ done
 mkdir demos/v0/rigid_body/TurnFaucet-v0/merged_pointcloud/
 mv demos/v0/rigid_body/TurnFaucet-v0/50*.pointcloud.* demos/v0/rigid_body/TurnFaucet-v0/merged_pointcloud/
 python -m mani_skill2.trajectory.merge_trajectory \
-    -i demos/v0/rigid_body/TurnFaucet-v0/merged_pointcloud/*.pointcloud.pd_ee_delta_pose.h5 \
+    -i demos/v0/rigid_body/TurnFaucet-v0/merged_pointcloud -p "*.pointcloud.pd_ee_delta_pose.h5" \
     -o demos/v0/rigid_body/TurnFaucet-v0/trajectory.pointcloud.pd_ee_delta_pose.h5
 mkdir demos/v0/rigid_body/TurnFaucet-v0/merged_rgbd/
 mv demos/v0/rigid_body/TurnFaucet-v0/50*.rgbd.* demos/v0/rigid_body/TurnFaucet-v0/merged_rgbd/
 python -m mani_skill2.trajectory.merge_trajectory \
-    -i demos/v0/rigid_body/TurnFaucet-v0/merged_rgbd/*.rgbd.pd_ee_delta_pose.h5 \
+    -i demos/v0/rigid_body/TurnFaucet-v0/merged_rgbd -p "*.rgbd.pd_ee_delta_pose.h5" \
     -o demos/v0/rigid_body/TurnFaucet-v0/trajectory.rgbd.pd_ee_delta_pose.h5
