@@ -201,11 +201,11 @@ Coming soon.
   ```
 
 - Zero-shot generalization evaluation:
-  - To evaluate camera view generalization experiments, run [scripts/run_maniskill2_camera_view.sh](scripts/run_maniskill2_camera_view.sh). The script evaluates the given `checkpoint` of the given `model` on the given `task` with four different camera views. See the script for more details. For example:
+  - To evaluate camera view generalization experiments, run [scripts/run_maniskill2_camera_view.sh](scripts/run_maniskill2_camera_view.sh). The script evaluates the given `checkpoint` of the given `model` on the given `task` with four different camera views, using the specified `seed`. See the script for more details. For example:
   ```bash
   bash scripts/run_maniskill2_camera_view.sh ${path/to/checkpoint} ${task} ${model} ${seed}
   ```
-  - To evaluate visual changes generalization experiments, run [scripts/run_maniskill2_visual_changes.sh](scripts/run_maniskill2_visual_changes.sh). The script evaluates the given `checkpoint` of the given `model` with different lighting conditions, noise levels and background colors. See the script for more details. Note that currently only `StackCube` task is supported. For example:
+  - To evaluate visual changes generalization experiments, run [scripts/run_maniskill2_visual_changes.sh](scripts/run_maniskill2_visual_changes.sh). The script evaluates the given `checkpoint` of the given `model` with different lighting conditions, noise levels and background colors, using the specified `seed`. See the script for more details. Note that currently only `StackCube` task is supported. For example:
   ```bash
   bash scripts/run_maniskill2_visual_changes.sh ${path/to/checkpoint} ${model} ${seed}
   ```
