@@ -30,6 +30,7 @@ In robot learning, the observation space is crucial due to the distinct characte
 - [Installation](#installation)
 - [Data Preparation](#mag-data-preparation)
 - [Training and Evaluation](#rocket-training-and-evaluation)
+- [Gotchas](#tada-gotchas)
 - [Trouble Shooting](#bulb-trouble-shooting)
 - [License](#books-license)
 - [Acknowledgement](#sparkles-acknowledgement)
@@ -172,6 +173,7 @@ bash scripts/download_and_replay_maniskill2.sh
 Coming soon.
 </details>
 
+
 ## :rocket: Training and Evaluation
 
 <details>
@@ -180,27 +182,33 @@ Coming soon.
 - Train with RGB(-D) image observation:
   ```bash
   # ACT policy example:
-  python src/train.py exp_maniskill2_act_policy=base exp_maniskill2_act_policy/maniskill2_task@maniskill2_task=${task} exp_maniskill2_act_policy/maniskill2_model@maniskill2_model=${model}
+  python src/train.py exp_maniskill2_act_policy=base exp_maniskill2_act_policy/maniskill2_task@maniskill2_task=${task} exp_maniskill2_act_policy/maniskill2_model@maniskill2_model=${model} seed=${seed}
   # Diffusion policy example:
-  python src/train.py exp_maniskill2_diffusion_policy=base exp_maniskill2_diffusion_policy/maniskill2_task@maniskill2_task=${task} exp_maniskill2_diffusion_policy/maniskill2_model@maniskill2_model=${model}
+  python src/train.py exp_maniskill2_diffusion_policy=base exp_maniskill2_diffusion_policy/maniskill2_task@maniskill2_task=${task} exp_maniskill2_diffusion_policy/maniskill2_model@maniskill2_model=${model} seed=${seed}
   ```
 
 - Train with point cloud observation:
   ```bash
   # ACT policy example:
-  python src/train.py exp_maniskill2_act_policy=base exp_maniskill2_act_policy/maniskill2_pcd_task@maniskill2_pcd_task=${task} exp_maniskill2_act_policy/maniskill2_model@maniskill2_model=${model}
+  python src/train.py exp_maniskill2_act_policy=base exp_maniskill2_act_policy/maniskill2_pcd_task@maniskill2_pcd_task=${task} exp_maniskill2_act_policy/maniskill2_model@maniskill2_model=${model} seed=${seed}
   # Diffusion policy example:
-  python src/train.py exp_maniskill2_diffusion_policy=base exp_maniskill2_diffusion_policy/maniskill2_pcd_task@maniskill2_pcd_task=${task} exp_maniskill2_diffusion_policy/maniskill2_model@maniskill2_model=${model}
+  python src/train.py exp_maniskill2_diffusion_policy=base exp_maniskill2_diffusion_policy/maniskill2_pcd_task@maniskill2_pcd_task=${task} exp_maniskill2_diffusion_policy/maniskill2_model@maniskill2_model=${model} seed=${seed}
   ```
 
 - Evaluate a checkpoint:
   ```bash
-  python src/validate.py exp_maniskill2_act_policy=base exp_maniskill2_act_policy/maniskill2_pcd_task@maniskill2_pcd_task=${task} exp_maniskill2_act_policy/maniskill2_model@maniskill2_model=${model} ckpt_path=${path/to/checkpoint}
+  python src/validate.py exp_maniskill2_act_policy=base exp_maniskill2_act_policy/maniskill2_pcd_task@maniskill2_pcd_task=${task} exp_maniskill2_act_policy/maniskill2_model@maniskill2_model=${model} ckpt_path=${path/to/checkpoint} seed=${seed}
   ```
 
 - Zero-shot generalization evaluation:
-  
-  Coming soon.
+  - To evaluate camera view generalization experiments, run [scripts/run_maniskill2_camera_view.sh](scripts/run_maniskill2_camera_view.sh). The script evaluates the given `checkpoint` of the given `model` on the given `task` with four different camera views. See the script for more details. For example:
+  ```bash
+  bash scripts/run_maniskill2_camera_view.sh ${path/to/checkpoint} ${task} ${model} ${seed}
+  ```
+  - To evaluate visual changes generalization experiments, run [scripts/run_maniskill2_visual_changes.sh](scripts/run_maniskill2_visual_changes.sh). The script evaluates the given `checkpoint` of the given `model` with different lighting conditions, noise levels and background colors. See the script for more details. Note that currently only `StackCube` task is supported. For example:
+  ```bash
+  bash scripts/run_maniskill2_visual_changes.sh ${path/to/checkpoint} ${model} ${seed}
+  ```
   
 Detailed configurations can be found in [configs/exp_maniskill2_act_policy](configs/exp_maniskill2_act_policy) and [configs/exp_maniskill2_diffusion_policy](configs/exp_maniskill2_diffusion_policy).
 
@@ -215,6 +223,162 @@ Currently supported models can be found in [configs/exp_maniskill2_act_policy/ma
 <summary><b> RLBench </b></summary>
 Coming soon.
 </details>
+
+## :tada: Gotchas
+
+<details>
+<summary><b> Override any config parameter from command line </b></summary>
+
+This codebase is based on [Hydra](https://github.com/facebookresearch/hydra), which allows for convenient configuration overriding:
+```bash
+python src/train.py trainer.max_epochs=20 seed=300
+```
+> **Note**: You can also add new parameters with `+` sign.
+```bash
+python src/train.py +some_new_param=some_new_value
+```
+
+</details>
+
+<details>
+<summary><b>Train on CPU, GPU, multi-GPU and TPU</b></summary>
+
+```bash
+# train on CPU
+python src/train.py trainer=cpu
+
+# train on 1 GPU
+python src/train.py trainer=gpu
+
+# train on TPU
+python src/train.py +trainer.tpu_cores=8
+
+# train with DDP (Distributed Data Parallel) (4 GPUs)
+python src/train.py trainer=ddp trainer.devices=4
+
+# train with DDP (Distributed Data Parallel) (8 GPUs, 2 nodes)
+python src/train.py trainer=ddp trainer.devices=4 trainer.num_nodes=2
+
+# simulate DDP on CPU processes
+python src/train.py trainer=ddp_sim trainer.devices=2
+
+# accelerate training on mac
+python src/train.py trainer=mps
+```
+
+</details>
+
+<details>
+<summary><b>Train with mixed precision</b></summary>
+
+```bash
+# train with pytorch native automatic mixed precision (AMP)
+python src/train.py trainer=gpu +trainer.precision=16
+```
+
+</details>
+
+<details>
+<summary><b>Use different tricks available in Pytorch Lightning</b></summary>
+
+```yaml
+# gradient clipping may be enabled to avoid exploding gradients
+python src/train.py trainer.gradient_clip_val=0.5
+
+# run validation loop 4 times during a training epoch
+python src/train.py +trainer.val_check_interval=0.25
+
+# accumulate gradients
+python src/train.py trainer.accumulate_grad_batches=10
+
+# terminate training after 12 hours
+python src/train.py +trainer.max_time="00:12:00:00"
+```
+
+> **Note**: PyTorch Lightning provides about [40+ useful trainer flags](https://pytorch-lightning.readthedocs.io/en/latest/common/trainer.html#trainer-flags).
+
+</details>
+
+<details>
+<summary><b>Easily debug</b></summary>
+
+```bash
+# runs 1 epoch in default debugging mode
+# changes logging directory to `logs/debugs/...`
+# sets level of all command line loggers to 'DEBUG'
+# enforces debug-friendly configuration
+python src/train.py debug=default
+
+# run 1 train, val and test loop, using only 1 batch
+python src/train.py debug=fdr
+
+# print execution time profiling
+python src/train.py debug=profiler
+
+# try overfitting to 1 batch
+python src/train.py debug=overfit
+
+# raise exception if there are any numerical anomalies in tensors, like NaN or +/-inf
+python src/train.py +trainer.detect_anomaly=true
+
+# use only 20% of the data
+python src/train.py +trainer.limit_train_batches=0.2 \
++trainer.limit_val_batches=0.2 +trainer.limit_test_batches=0.2
+```
+
+> **Note**: Visit [configs/debug/](configs/debug/) for different debugging configs.
+
+</details>
+
+<details>
+<summary><b>Resume training from checkpoint</b></summary>
+
+```yaml
+python src/train.py ckpt_path="/path/to/ckpt/name.ckpt"
+```
+
+> **Note**: Checkpoint can be either path or URL.
+
+> **Note**: Currently loading ckpt doesn't resume logger experiment, but it will be supported in future Lightning release.
+
+</details>
+
+<details>
+<summary><b>Create a sweep over hyperparameters</b></summary>
+
+```bash
+# this will run 9 experiments one after the other,
+# each with different combination of seed and learning rate
+python src/train.py -m seed=100,200,300 model.optimizer.lr=0.0001,0.00005,0.00001
+```
+
+> **Note**: Hydra composes configs lazily at job launch time. If you change code or configs after launching a job/sweep, the final composed configs might be impacted.
+
+</details>
+
+<details>
+<summary><b>Execute all experiments from folder</b></summary>
+
+```bash
+python src/train.py -m 'exp_maniskill2_act_policy/maniskill2_task@maniskill2_task=glob(*)'
+```
+
+> **Note**: Hydra provides special syntax for controlling behavior of multiruns. Learn more [here](https://hydra.cc/docs/next/tutorials/basic/running_your_app/multi-run). The command above executes all task experiments from [configs/exp_maniskill2_act_policy/maniskill2_task](configs/experiment/).
+
+</details>
+
+<details>
+<summary><b>Execute run for multiple different seeds</b></summary>
+
+```bash
+python src/train.py -m seed=100,200,300 trainer.deterministic=True
+```
+
+> **Note**: `trainer.deterministic=True` makes pytorch more deterministic but impacts the performance.
+
+</details>
+
+For more instructions, refer to the official documentation for [Pytorch Lightning](https://github.com/Lightning-AI/pytorch-lightning), [Hydra](https://github.com/facebookresearch/hydra), and [Lightning Hydra Template](https://github.com/ashleve/lightning-hydra-template).
 
 ## :bulb: Trouble Shooting
 
