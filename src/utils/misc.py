@@ -83,3 +83,66 @@ def import_modules_from_strings(imports, allow_failed_imports=False):
 
 def interpolate_linear(target_t: int, t1: int, t2: int, x1: np.ndarray, x2: np.ndarray):
     return x1 + (target_t - t1) / (t2 - t1) * (x2 - x1) if t1 != t2 else x1
+
+
+class TemporalAgg:
+    def __init__(
+        self,
+        apply=False,
+        action_dim=8,
+        chunk_size=20,
+        k=0.01,
+    ) -> None:
+        self.apply = apply
+
+        if self.apply:
+            self.action_dim = action_dim
+            self.chunk_size = chunk_size
+            self.action_buffer = np.zeros(
+                (self.chunk_size, self.chunk_size, self.action_dim)
+            )
+            self.full_action = False
+            self.k = k
+
+    def reset(self):
+        self.action_buffer = np.zeros(
+            (self.chunk_size, self.chunk_size, self.action_dim)
+        )
+
+    def add_action(self, action):
+        if not self.full_action:
+            t = ((self.action_buffer != 0).sum(1).sum(1) != 0).sum()
+            self.action_buffer[t] = action
+            if t == self.chunk_size - 1:
+                self.full_action = True
+        else:
+            self.action_buffer = np.roll(self.action_buffer, -1, axis=0)
+            self.action_buffer[-1] = action
+
+    def get_action(self):
+        actions_populated = (
+            ((self.action_buffer != 0).sum(1).sum(1) != 0).sum()
+            if not self.full_action
+            else self.chunk_size
+        )
+        exp_weights = np.exp(-np.arange(actions_populated) * self.k)
+        exp_weights = exp_weights / exp_weights.sum()
+        current_t_actions = self.action_buffer[:actions_populated][
+            np.eye(self.chunk_size)[::-1][-actions_populated:].astype(bool)
+        ]
+        return (current_t_actions * exp_weights[:, None]).sum(0)
+
+    def __call__(self, action):
+        if not self.apply:
+            return action[0]
+        else:
+            self.add_action(action)
+            return self.get_action()
+
+
+def build_clip_model(clip_model: str = "ViT-B/16"):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    clip_model, _ = clip.load(clip_model, device=device, download_root="./.cache/clip")
+    clip_model.requires_grad_(False)
+    clip_model.eval()
+    return clip_model, device

@@ -2,7 +2,7 @@
 
 Here, we document some potential errors we have encountered. Please review the following information before opening an issue.
 
-### ManiSkill2 Installation
+### ManiSkill2
 
 Generally, [ManiSkill's official trouble shooting guide](https://maniskill.readthedocs.io/en/latest/user_guide/getting_started/installation.html#troubleshooting) is excellent. Here, we outline some regular errors on installation.
 
@@ -79,3 +79,39 @@ If `/etc/vulkan/implicit_layer.d/nvidia_layers.json` does not exist, try to crea
 ```
 
 More discussions can be found [here](https://github.com/haosulab/SAPIEN/issues/115).
+
+
+### RLBench
+
+- If you encounter this problem:
+
+    ```
+    qt.qpa.plugin: Could not find the Qt platform plugin "xcb" in "/mnt/zhuhaoyi/anaconda3/envs/pcm/lib/python3.11/site-packages/cv2/qt/plugins"
+    This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+    ```
+
+    You can fix it by running:
+    ```
+    pip uninstall opencv-python
+    pip install opencv-python-headless
+    ```
+
+- If you encounter this problem:
+
+    ```
+    qt.qpa.xcb: could not connect to display 
+    qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/mnt/zhuhaoyi/software/CoppeliaSim_Edu_V4_1_0_Ubuntu20_04" even though it was found.
+    This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+    Available platform plugins are: eglfs, linuxfb, minimal, minimalegl, offscreen, vnc, webgl, xcb.
+    ```
+
+    You can fix it by running:
+    ```
+    sudo apt-get update -y && sudo apt-get -y upgrade && sudo apt-get install xvfb -y 
+    nohup X :99 & disown
+    Xvfb :99 -screen 0 1024x768x24 +extension GLX +render -noreset &
+    export DISPLAY=:99
+    ```
+
+Most RLBench-related errors occur when running headless. For more detailed instructions, please refer to  [RLBench's official documentation](https://github.com/stepjam/RLBench?tab=readme-ov-file#running-headless).

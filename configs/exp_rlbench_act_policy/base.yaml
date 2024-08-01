@@ -1,0 +1,74 @@
+# @package _global_
+
+defaults:
+  - rlbench_model:
+  - override /trainer: ddp
+  - override /callbacks: default
+  - override /paths: default
+  - override /hydra: default
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+rlbench_task: null
+
+hydra:
+  run:
+    dir: ${paths.log_dir}/${task_name}/runs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  sweep:
+    dir: ${paths.log_dir}/${task_name}/runs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: ""
+
+paths:
+  log_dir: ${paths.root_dir}/logs/rlbench_act/${rlbench_task}
+
+data:
+  num_workers: 16
+  pin_memory: false
+  train:
+    task_names:
+      - ${rlbench_task}
+    loop: 100
+    cache_episode: true
+
+# model:
+#   eval:
+#     live_demos: false
+#     data_root: data/rlbench/raw/test
+#     headless: true
+#     episodes_num: 25
+#     max_steps: 400
+#     temporal_agg:
+#       apply: true
+#       action_dim: ${data.train.action_dim}
+#       chunk_size: ${data.train.chunk_size}
+#       k: 0.01
+#     offline: false
+#     camera_view_test:
+#       apply: false
+#       rot_axis: y
+#       rot_angle: 0
+#       transl: [0, 0, 0]
+#     rot_type: ${data.train.rot_type}
+#     cameras: ${data.train.cameras}
+#     include_depth: ${data.train.include_depth}
+#     collision: ${data.train.collision}
+#     data_type: ${data.train.type}
+#     rlbench_task: ${rlbench_task}
+
+trainer:
+  devices: 1
+  max_epochs: 2000
+  check_val_every_n_epoch: 100
+  accelerator: gpu
+  strategy: auto
+
+callbacks:
+  model_checkpoint:
+    monitor: val/loss
+    mode: min
+    filename: "epoch={epoch:03d}-val_loss={val/loss:.4f}"
+    save_top_k: 3
+  early_stopping:
+    monitor: val/loss
+    mode: "min"

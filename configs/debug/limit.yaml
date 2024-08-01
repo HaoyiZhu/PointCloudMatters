@@ -6,6 +6,7 @@ defaults:
   - default
 
 trainer:
+  accelerator: gpu
   max_epochs: 3
   limit_train_batches: 0.01
   limit_val_batches: 0.05

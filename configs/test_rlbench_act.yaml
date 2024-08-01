@@ -12,38 +12,50 @@ defaults:
   - paths: default
   - extras: default
   - hydra: default
-  - exp_maniskill2_act_policy:
-  - exp_maniskill2_diffusion_policy:
   - exp_rlbench_act_policy:
-  - exp_rlbench_diffusion_policy:
 
-    # optional local config for machine/user specific settings
-    # it's optional since it doesn't need to exist and is excluded from version control
+  # optional local config for machine/user specific settings
+  # it's optional since it doesn't need to exist and is excluded from version control
   - optional local: default
 
-    # debugging config (enable through command line, e.g. `python train.py debug=default)
+  # debugging config (enable through command line, e.g. `python train.py debug=default)
   - debug:
 
 # task name, determines output directory path
-task_name: "train"
+task_name: "test"
 
 # tags to help you identify your experiments
 # you can overwrite this in experiment configs
 # overwrite from command line with `python train.py tags="[first_tag, second_tag]"`
-tags: ["dev"]
-
-# set False to skip model training
-train: true
-
-# evaluate on test set, using best model weights achieved during training
-# lightning chooses best weights based on the metric specified in checkpoint callback
-test: false
-
-# compile model for faster training with pytorch 2.0
-compile: false
+tags: ["test"]
 
 # simply provide checkpoint path to resume training
 ckpt_path:
 
 # seed for random number generators in pytorch, numpy and python.random
 seed: 1000
+
+# rlbench test options
+live_demos: false
+data_root: data/rlbench/raw/test
+headless: false
+episodes_num: 25
+max_steps: 200
+temporal_agg:
+  apply: true
+  action_dim: ${data.train.action_dim}
+  chunk_size: ${data.train.chunk_size}
+  k: 0.01
+  
+result_path: logs/rlbench_act/${rlbench_task}/${task_name}
+result_file: test_result.txt
+result_name: ${ckpt_path}
+
+offline: false
+
+camera_view_test:
+  apply: false
+  rot_axis: y
+  rot_angle: 0
+  transl: [0, 0, 0]
+  

@@ -1,0 +1,98 @@
+_target_: src.models.rlbench_act_bc_module.RLBenchACTBCModule
+
+temporal_agg: true
+
+optimizer:
+  type: AdamW
+  lr: 0.0001
+  weight_decay: 0.05
+
+lr_scheduler:
+  scheduler:
+    type: OneCycleLR
+    max_lr: ${model.optimizer.lr}
+    pct_start: 0.15
+    anneal_strategy: cos
+    div_factor: 100.0
+    final_div_factor: 1000.0
+  interval: step
+  frequency: 1
+
+policy:
+  _target_: src.models.components.act.act.ACTRLBenchPCD
+  backbone: 
+  transformer:
+    _target_: src.models.components.act.transformer.Transformer
+    d_model: ${model.policy.hidden_dim}
+    dropout: 0.1
+    nhead: 8
+    dim_feedforward: 32
+    num_encoder_layers: 4
+    num_decoder_layers: 7
+    normalize_before: false
+    return_intermediate_dec: true
+  encoder:
+    _target_: src.models.components.act.transformer.TransformerEncoder
+    d_model: ${model.policy.hidden_dim}
+    dropout: ${model.policy.transformer.dropout}
+    nhead: ${model.policy.transformer.nhead}
+    dim_feedforward: ${model.policy.transformer.dim_feedforward}
+    num_layers: ${model.policy.transformer.num_encoder_layers} # 4 # TODO shared with VAE decoder
+    normalize_before: ${model.policy.transformer.normalize_before}
+    activation: relu
+  hidden_dim: 512
+  num_queries: ${data.train.chunk_size}
+  num_cameras: ${eval:'len(${data.train.cameras})'}
+  action_dim: ${data.train.action_dim}
+  qpos_dim: ${data.train.action_dim}
+  env_state_dim: 0  # for state_only case
+  latent_dim: 32
+  action_loss:
+    _target_: torch.nn.MSELoss
+    reduction: none
+  klloss:
+    _target_: src.models.components.loss.misc.KLDivergence
+  kl_weight: 10.0
+  goal_cond_dim: 512
+  obs_feature_pos_embedding:
+    _target_: src.models.components.act.positional_encoding.PositionEmbeddingSine # or, PositionEmbeddingLearned
+    num_pos_feats: ${eval:'${model.policy.hidden_dim} // 2'}
+    normalize: true
+  pcd_nsample: 16
+  pcd_npoints: 2048
+  rot_type: ${data.train.rot_type}
+  collision: ${data.train.collision}
+  position_loss_weight: 10.0
+
+train_metrics:
+  _target_: src.utils.metrics.Metrics
+  metrics:
+    - _target_: torchmetrics.MeanMetric
+    - _target_: torchmetrics.MeanMetric
+    - _target_: torchmetrics.MeanMetric
+  input_keys:
+    - loss
+    - action_loss
+    - kl_loss
+  output_keys:
+    - train/loss
+    - train/action_loss
+    - train/kl_loss
+
+val_metrics:
+  _target_: src.utils.metrics.Metrics
+  metrics:
+    - _target_: torchmetrics.MeanMetric
+  input_keys:
+    - loss
+  output_keys:
+    - val/loss
+
+best_val_metrics:
+  _target_: src.utils.metrics.Metrics
+  metrics:
+    - _target_: torchmetrics.MinMetric
+  input_keys:
+    - val/loss
+  output_keys:
+    - val/loss

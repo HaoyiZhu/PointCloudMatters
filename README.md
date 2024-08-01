@@ -93,7 +93,7 @@ Our codebase draws significant inspiration from the excellent [Lightning Hydra T
 
 ```bash
 # clone project
-git clone https://github.com/HaoyiZhu/PointCloudMatters-dev.git
+git clone https://github.com/HaoyiZhu/PointCloudMatters.git
 cd PointCloudMatters
 
 # crerate conda environment
@@ -150,7 +150,64 @@ python -m mani_skill2.examples.demo_random_action
 <details>
 <summary><b> RLBench </b></summary>
 
-Coming soon.
+> **Note**: Installing RLbench can be challenging. We recommend referring to [PerAct's installation guides](https://github.com/peract/peract?tab=readme-ov-file#installation) for more assistance.
+
+#### 1. PyRep and Coppelia Simulator
+
+Follow instructions from the official [PyRep](https://github.com/stepjam/PyRep) repo; reproduced here for convenience:
+
+PyRep requires version **4.1** of CoppeliaSim. Download: 
+- [Ubuntu 16.04](https://downloads.coppeliarobotics.com/V4_1_0/CoppeliaSim_Player_V4_1_0_Ubuntu16_04.tar.xz)
+- [Ubuntu 18.04](https://downloads.coppeliarobotics.com/V4_1_0/CoppeliaSim_Player_V4_1_0_Ubuntu18_04.tar.xz)
+- [Ubuntu 20.04](https://downloads.coppeliarobotics.com/V4_1_0/CoppeliaSim_Edu_V4_1_0_Ubuntu20_04.tar.xz)
+
+Once you have downloaded CoppeliaSim, you can pull PyRep from git:
+
+```bash
+cd <install_dir>
+git clone https://github.com/stepjam/PyRep.git
+cd PyRep
+```
+
+Add the following to your *~/.bashrc* file: (__NOTE__: the 'EDIT ME' in the first line)
+
+```bash
+export COPPELIASIM_ROOT=<EDIT ME>/PATH/TO/COPPELIASIM/INSTALL/DIR
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COPPELIASIM_ROOT
+export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT
+```
+
+Remember to source your bashrc (`source ~/.bashrc`) or 
+zshrc (`source ~/.zshrc`) after this.
+
+**Warning**: CoppeliaSim might cause conflicts with ROS workspaces. 
+
+Finally install the python library:
+
+```bash
+pip install -r requirements.txt
+pip install .
+```
+
+You should be good to go!
+You could try running one of the examples in the *examples/* folder.
+
+If you encounter errors, please use the [PyRep issue tracker](https://github.com/stepjam/PyRep/issues).
+
+#### 2. RLBench
+
+We use [PerAct's RLBench fork](https://github.com/MohitShridhar/RLBench/tree/peract). 
+
+```bash
+cd <install_dir>
+git clone -b peract https://github.com/MohitShridhar/RLBench.git # note: 'peract' branch
+
+cd RLBench
+pip install -r requirements.txt
+python setup.py develop
+```
+
+For [running in headless mode](https://github.com/MohitShridhar/RLBench/tree/peract#running-headless), tasks setups, and other issues, please refer to the [official repo](https://github.com/stepjam/RLBench).
 
 
 </details>
@@ -170,7 +227,45 @@ bash scripts/download_and_replay_maniskill2.sh
 
 <details>
 <summary><b> RLBench </b></summary>
+
+#### 1. Quick Start with PerAct's Pre-generated Datasets
+
+[PerAct](https://github.com/peract/peract?tab=readme-ov-file#pre-generated-datasets) has provided [pre-generated RLBench demonstrations](https://drive.google.com/drive/folders/0B2LlLwoO3nfZfkFqMEhXWkxBdjJNNndGYl9uUDQwS1pfNkNHSzFDNGwzd1NnTmlpZXR1bVE?resourcekey=0-jRw5RaXEYRLe2W6aNrNFEQ&usp=share_link) for the 18 tasks it used. Each task contains 100 episodes for training, and 25 for testing and validation. Please download and extract them into `./data/rlbench/raw`. Your data directory structure may look like the following:
+
+```
+├── data
+│   ├── ...
+│   ├── rlbench
+│   │   ├── raw
+|   |   |   ├── train
+|   |   |   |   ├── close_jar
+|   |   |   |   |   ├── all_variations
+|   |   |   |   |   |   ├── episodes
+|   |   |   |   |   |   |   ├── episode0
+|   |   |   |   |   |   |   ├── episode1
+|   |   |   |   |   |   |   ├── ...
+|   |   |   |   ├── open_drawer
+|   |   |   |   ├── ...
+|   |   |   ├── val
+|   |   |   |   ├── ...
+|   |   |   ├── test
+|   |   |   |   ├── ...
+│   └── ...
+```
+
+To facilite the data loading speed during training, we provide a script to pre-process the raw data. You can run the following example command and it will generate processed data under `./data/rlbench/processed`.
+
+```bash
+# e.g. to pre-process task turn_tap with front camera:
+python scripts/preprocess_rlbench.py --task_names turn_tap --camera_views front
+```
+
+#### 2. Data Generation by Your Own
+
+You can also generate your own data on [all tasks RLBench supported](https://github.com/stepjam/RLBench/tree/master/rlbench/tasks).
+
 Coming soon.
+
 </details>
 
 
@@ -221,7 +316,40 @@ Currently supported models can be found in [configs/exp_maniskill2_act_policy/ma
 
 <details>
 <summary><b> RLBench </b></summary>
-Coming soon.
+
+- Train with RGB(-D) image observation:
+  ```bash
+  # ACT policy example:
+  python src/train.py exp_rlbench_act_policy=base rlbench_task=${task} exp_rlbench_act_policy/rlbench_model@rlbench_model=${model} seed=${seed}
+  # Diffusion policy example:
+  python src/train.py exp_rlbench_diffusion_policy=base rlbench_task=${task} exp_rlbench_diffusion_policy/rlbench_model@rlbench_model=${model} seed=${seed}
+  ```
+
+- Train with point cloud observation:
+  ```bash
+  # ACT policy example:
+  python src/train.py exp_rlbench_act_policy=base rlbench_task=${task} exp_rlbench_act_policy/rlbench_model@rlbench_model=${model} seed=${seed}
+  # Diffusion policy example:
+  python src/train.py exp_rlbench_diffusion_policy=base rlbench_task=${task} exp_rlbench_diffusion_policy/rlbench_model@rlbench_model=${model} seed=${seed}
+  ```
+
+- Evaluate a checkpoint:
+  ```bash
+  # ACT policy example:
+  python src/test_rlbench_act.py exp_rlbench_act_policy=base rlbench_task=${task} exp_rlbench_act_policy/rlbench_model@rlbench_model=${model} seed=${seed} ckpt_path=${path/to/checkpoint}
+  ```
+
+- Zero-shot camera-view generalization evaluation:
+  To evaluate camera view generalization experiments, run [scripts/run_rlbench_camera_view.sh](scripts/run_rlbench_camera_view.sh). The script evaluates the given `checkpoint` of the given `policy` and `model` on the given `task` with four different camera views, using the specified `seed`. See the script for more details. For example:
+  ```bash
+  # policy: either diffusion or act
+  bash scripts/run_rlbench_camera_view.sh ${policy} ${path/to/checkpoint} ${task} ${model} ${seed}
+  ```
+
+Detailed configurations can be found in [configs/exp_rlbench_act_policy](configs/exp_rlbench_act_policy) and [configs/exp_rlbench_diffusion_policy](configs/exp_rlbench_diffusion_policy).
+
+Currently supported models can be found in [configs/exp_rlbench_act_policy/rlbench_model](configs/exp_rlbench_act_policy/rlbench_model) and [configs/exp_rlbench_diffusion_policy/rlbench_model](configs/exp_rlbench_diffusion_policy/rlbench_model).
+
 </details>
 
 ## :tada: Gotchas

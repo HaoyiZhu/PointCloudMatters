@@ -1,0 +1,19 @@
+# @package _global_
+defaults:
+  - override /data: rlbench_act_rgbd_dataset
+  - override /model: rlbench_act_model
+
+task_name: scratch_resnet50_rgbd
+
+data:
+  train:
+    include_depth: true
+
+model:
+  policy:
+    backbone:
+      _target_: src.models.components.img_encoder.resnet.ResNetTorchVision
+      resnet_model: resnet50
+      pretrained: false
+      channels: 4
+      avg_pool: true

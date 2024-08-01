@@ -17,6 +17,7 @@ import torchvision.transforms as T
 from einops import pack, rearrange, reduce, repeat, unpack
 
 from src.utils import offset2batch
+from src.utils.rotation_conversions import matrix_to_quaternion, rotation_6d_to_matrix
 
 from .utils import get_sinusoid_encoding_table, reparametrize
 
@@ -329,7 +330,7 @@ class ACTPCD(ACT):
         freeze_backbone=False,
         pcd_nsample=16,
         pcd_npoints=1024,
-        sampling="fps",  # or heatmap_fps / heatmap_prob
+        sampling="fps",
         heatmap_th=0.1,
         ignore_vae=False,
         use_mask=False,
@@ -439,6 +440,8 @@ class ACTPCD(ACT):
                     idx = torch.cat([fg_idx, bg_idx], dim=0)
                 else:
                     idx = fg_idx
+        else:
+            raise NotImplementedError
 
         n_p = p[idx.long(), :]  # (m, 3)
         x, _ = pointops.knn_query_and_group(
@@ -591,5 +594,232 @@ class ACTPCD(ACT):
         data_dict["pos"] = pos
         data_dict["latent_input"] = latent_input
         data_dict["proprio_input"] = proprio_input
+
+        return data_dict
+
+
+class ACTRLBench(ACT):
+    def __init__(
+        self,
+        backbone,
+        transformer,
+        encoder,
+        hidden_dim,
+        num_queries,
+        num_cameras,
+        action_dim=8,
+        qpos_dim=9,
+        env_state_dim=0,
+        latent_dim=32,
+        action_loss=None,
+        klloss=None,
+        kl_weight=20.0,
+        goal_cond_dim=0,
+        obs_feature_pos_embedding=None,
+        freeze_backbone=False,
+        ignore_vae=False,
+        rot_type="6d",
+        collision=False,
+        position_loss_weight=1.0,
+    ):
+        super().__init__(
+            backbone=backbone,
+            transformer=transformer,
+            encoder=encoder,
+            hidden_dim=hidden_dim,
+            num_queries=num_queries,
+            num_cameras=num_cameras,
+            action_dim=action_dim,
+            qpos_dim=qpos_dim,
+            env_state_dim=env_state_dim,
+            latent_dim=latent_dim,
+            action_loss=action_loss,
+            klloss=klloss,
+            kl_weight=kl_weight,
+            goal_cond_dim=goal_cond_dim,
+            obs_feature_pos_embedding=obs_feature_pos_embedding,
+            freeze_backbone=freeze_backbone,
+            ignore_vae=ignore_vae,
+        )
+
+        self.rot_type = rot_type
+        self.collision = collision
+        self.position_loss_weight = position_loss_weight
+
+    def forward_decoder(self, data_dict):
+        src = data_dict["src"]
+        pos = data_dict["pos"]
+        latent_input = data_dict["latent_input"]
+        proprio_input = data_dict["proprio_input"]
+
+        # (bs, num_queries, hidden_dim)
+        hs = self.transformer(
+            src,
+            None,
+            self.query_embed.weight,
+            pos,
+            latent_input,
+            proprio_input,
+            self.additional_pos_embed.weight if latent_input is not None else None,
+        )[0]
+
+        a_hat = self.action_head(hs)  # (bs, num_queries, action_dim)
+        position = a_hat[..., :3]
+        if self.collision:
+            collision = torch.sigmoid(a_hat[..., -1:])
+            gripper = torch.sigmoid(a_hat[..., -2:-1])
+            gripper = torch.cat([gripper, collision], dim=-1)
+            rot = a_hat[..., 3:-2]
+        else:
+            gripper = torch.sigmoid(a_hat[..., -1:])
+            rot = a_hat[..., 3:-1]
+
+        if not data_dict["is_training"]:
+            if self.rot_type == "6d":
+                rot = rotation_6d_to_matrix(rot)
+                rot = matrix_to_quaternion(rot)
+            else:
+                raise NotImplementedError
+
+        a_hat = torch.cat([position, rot, gripper], dim=-1)
+
+        is_pad_hat = self.is_pad_head(hs)  # (bs, num_queries, 1)
+
+        data_dict["a_hat"] = a_hat
+        data_dict["is_pad_hat"] = is_pad_hat
+
+        return data_dict
+
+    def forward_loss(self, data_dict):
+        total_kld = self.klloss(data_dict["mu"], data_dict["logvar"])
+
+        action_loss = self.action_loss(data_dict["a_hat"], data_dict["actions"])
+        action_loss[..., :3] = action_loss[..., :3] * self.position_loss_weight
+        action_loss = (action_loss * ~data_dict["is_pad"].unsqueeze(-1)).mean()
+
+        data_dict["action_loss"] = action_loss
+        data_dict["kl_loss"] = total_kld
+        data_dict["loss"] = action_loss + total_kld * self.kl_weight
+
+        return data_dict
+
+
+class ACTRLBenchPCD(ACTPCD):
+    def __init__(
+        self,
+        backbone,
+        transformer,
+        encoder,
+        hidden_dim,
+        num_queries,
+        num_cameras,
+        action_dim=8,
+        qpos_dim=9,
+        env_state_dim=0,
+        latent_dim=32,
+        action_loss=None,
+        klloss=None,
+        kl_weight=20.0,
+        goal_cond_dim=0,
+        obs_feature_pos_embedding=None,
+        freeze_backbone=False,
+        pcd_nsample=16,
+        pcd_npoints=1024,
+        sampling="fps",
+        heatmap_th=0.1,
+        ignore_vae=False,
+        rot_type="6d",
+        collision=False,
+        position_loss_weight=1.0,
+        use_mask=False,
+        bg_ratio=0.0,
+    ):
+        super().__init__(
+            backbone=backbone,
+            transformer=transformer,
+            encoder=encoder,
+            hidden_dim=hidden_dim,
+            num_queries=num_queries,
+            num_cameras=0,
+            action_dim=action_dim,
+            qpos_dim=qpos_dim,
+            env_state_dim=env_state_dim,
+            latent_dim=latent_dim,
+            action_loss=action_loss,
+            klloss=klloss,
+            kl_weight=kl_weight,
+            goal_cond_dim=goal_cond_dim,
+            obs_feature_pos_embedding=None,
+            freeze_backbone=freeze_backbone,
+            pcd_nsample=pcd_nsample,
+            pcd_npoints=pcd_npoints,
+            sampling=sampling,
+            heatmap_th=heatmap_th,
+            ignore_vae=ignore_vae,
+            use_mask=use_mask,
+            bg_ratio=bg_ratio,
+        )
+
+        self.rot_type = rot_type
+        self.collision = collision
+        self.position_loss_weight = position_loss_weight
+
+        self.use_mask = use_mask
+        self.bg_ratio = bg_ratio
+
+    def forward_decoder(self, data_dict):
+        src = data_dict["src"]
+        pos = data_dict["pos"]
+        latent_input = data_dict["latent_input"]
+        proprio_input = data_dict["proprio_input"]
+
+        # (bs, num_queries, hidden_dim)
+        hs = self.transformer(
+            src,
+            None,
+            self.query_embed.weight,
+            pos,
+            latent_input,
+            proprio_input,
+            self.additional_pos_embed.weight if latent_input is not None else None,
+        )[0]
+
+        a_hat = self.action_head(hs)  # (bs, num_queries, action_dim)
+        position = a_hat[..., :3]
+        if self.collision:
+            collision = torch.sigmoid(a_hat[..., -1:])
+            gripper = torch.sigmoid(a_hat[..., -2:-1])
+            gripper = torch.cat([gripper, collision], dim=-1)
+            rot = a_hat[..., 3:-2]
+        else:
+            gripper = torch.sigmoid(a_hat[..., -1:])
+            rot = a_hat[..., 3:-1]
+
+        if not data_dict["is_training"]:
+            if self.rot_type == "6d":
+                rot = rotation_6d_to_matrix(rot)
+                rot = matrix_to_quaternion(rot)
+            else:
+                raise NotImplementedError
+
+        a_hat = torch.cat([position, rot, gripper], dim=-1)
+
+        is_pad_hat = self.is_pad_head(hs)  # (bs, num_queries, 1)
+
+        data_dict["a_hat"] = a_hat
+        data_dict["is_pad_hat"] = is_pad_hat
+
+        return data_dict
+
+    def forward_loss(self, data_dict):
+        total_kld = self.klloss(data_dict["mu"], data_dict["logvar"])
+
+        action_loss = self.action_loss(data_dict["a_hat"], data_dict["actions"])
+        action_loss[..., :3] = action_loss[..., :3] * self.position_loss_weight
+        action_loss = (action_loss * ~data_dict["is_pad"].unsqueeze(-1)).mean()
+
+        data_dict["action_loss"] = action_loss
+        data_dict["kl_loss"] = total_kld
+        data_dict["loss"] = action_loss + total_kld * self.kl_weight
 
         return data_dict

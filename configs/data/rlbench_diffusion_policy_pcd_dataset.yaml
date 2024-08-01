@@ -1,0 +1,55 @@
+_target_: src.data.base_datamodule.BaseDataModule
+
+batch_size_train: 32
+batch_size_val: 1
+batch_size_test: 1
+num_workers: 16
+pin_memory: true
+train:
+  _target_: src.data.components.rlbench.rlbench_single_task_dp.RLBenchSingleTaskDiffusionPolicyPCDDataset
+  root: data/rlbench/processed/train/
+  task_names: 
+    - ${rlbench_task}
+  chunk_size: 16
+  max_episodes_per_task: 100
+  cameras:
+    - front
+  action_dim: 11
+  collision: true
+  rot_type: 6d
+  include_depth: null
+  transform_pcd:
+    - _target_: src.data.components.transformpcd.GridSamplePCD
+      grid_size: 0.005
+      hash_type: fnv
+      mode: train
+      return_grid_coord: true
+      return_displacement: false
+      keys:
+        - coord
+        - color
+    - _target_: src.data.components.transformpcd.NormalizeColorPCD
+    - _target_: src.data.components.transformpcd.ShufflePointPCD
+    - _target_: src.data.components.transformpcd.ToTensorPCD
+    - _target_: src.data.components.transformpcd.CollectPCD
+      keys:
+        - coord
+        - grid_coord
+      feat_keys:
+        - color
+        - coord
+  loop: 1
+  
+val:
+  _target_: src.data.components.rlbench.rlbench_single_task_dp.RLBenchSingleTaskDiffusionPolicyPCDDataset
+  root: data/rlbench/processed/val/
+  task_names: ${data.train.task_names}
+  chunk_size: ${data.train.chunk_size}
+  max_episodes_per_task: 25
+  cameras: ${data.train.cameras}
+  action_dim: ${data.train.action_dim}
+  collision: ${data.train.collision}
+  rot_type: ${data.train.rot_type}
+  include_depth: ${data.train.include_depth}
+  transform_pcd: ${data.train.transform_pcd}
+  loop: 1

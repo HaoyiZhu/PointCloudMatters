@@ -1,0 +1,55 @@
+# @package _global_
+
+# specify here default configuration
+# order of defaults determines the order in which configs override each other
+defaults:
+- _self_
+- data:
+- model:
+- callbacks: default
+- logger: tensorboard # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
+- trainer: ddp
+- paths: default
+- extras: default
+- hydra: default
+- exp_rlbench_diffusion_policy:
+
+# optional local config for machine/user specific settings
+# it's optional since it doesn't need to exist and is excluded from version control
+- optional local: default
+
+# debugging config (enable through command line, e.g. `python train.py debug=default)
+- debug:
+
+# task name, determines output directory path
+task_name: "test"
+
+# tags to help you identify your experiments
+# you can overwrite this in experiment configs
+# overwrite from command line with `python train.py tags="[first_tag, second_tag]"`
+tags: ["test"]
+
+# simply provide checkpoint path to resume training
+ckpt_path:
+
+# seed for random number generators in pytorch, numpy and python.random
+seed: 1000
+
+# rlbench test options
+live_demos: false
+data_root: data/rlbench/raw/test
+headless: true
+episodes_num: 25
+max_steps: 200
+
+result_path: logs/rlbench_dp/${rlbench_task}/${task_name}
+result_file: test_result.txt
+result_name: ${ckpt_path}
+
+offline: false
+
+camera_view_test:
+  apply: false
+  rot_axis: y
+  rot_angle: 0
+  transl: [0, 0, 0]

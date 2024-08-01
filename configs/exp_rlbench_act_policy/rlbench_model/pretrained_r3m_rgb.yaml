@@ -1,0 +1,14 @@
+# @package _global_
+defaults:
+  - override /data: rlbench_act_rgbd_dataset
+  - override /model: rlbench_act_model
+
+task_name: pretrained_r3m_rgb
+
+model:
+  policy:
+    backbone:
+      _target_: src.models.components.img_encoder.resnet.R3MResNet
+      resnet_model: resnet50
+      channels: 3
+      avg_pool: true

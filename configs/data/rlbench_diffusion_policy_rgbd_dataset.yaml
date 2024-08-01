@@ -1,0 +1,35 @@
+_target_: src.data.base_datamodule.BaseDataModule
+
+batch_size_train: 32
+batch_size_val: 1
+batch_size_test: 1
+num_workers: 16
+pin_memory: true
+train:
+  _target_: src.data.components.rlbench.rlbench_single_task_dp.RLBenchSingleTaskDiffusionPolicyRGBDDataset
+  root: data/rlbench/processed/train/
+  task_names: 
+    - ${rlbench_task}
+  chunk_size: 16
+  max_episodes_per_task: 100
+  cameras:
+    - front
+  action_dim: 11
+  collision: true
+  rot_type: 6d
+  include_depth: false
+  loop: 1
+
+val:
+  _target_: src.data.components.rlbench.rlbench_single_task_dp.RLBenchSingleTaskDiffusionPolicyRGBDDataset
+  root: data/rlbench/processed/val/
+  task_names: ${data.train.task_names}
+  chunk_size: ${data.train.chunk_size}
+  max_episodes_per_task: 25
+  cameras: ${data.train.cameras}
+  action_dim: ${data.train.action_dim}
+  collision: ${data.train.collision}
+  rot_type: ${data.train.rot_type}
+  include_depth: ${data.train.include_depth}
+  loop: 1
+

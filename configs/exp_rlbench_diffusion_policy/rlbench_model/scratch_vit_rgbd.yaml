@@ -1,0 +1,31 @@
+# @package _global_
+defaults:
+  - override /data: rlbench_diffusion_policy_rgbd_dataset
+  - override /model: rlbench_diffusion_policy_model
+
+task_name: scratch_vit_rgbd
+
+data:
+  train:
+    include_depth: true
+
+model:
+  policy:
+    shape_meta:
+      obs:
+        front_rgb:
+          shape: [3, 128, 128]
+          type: rgb
+        front_depth:
+          shape: [1, 128, 128]
+          type: depth
+        qpos:
+          shape:
+            - ${data.train.action_dim}
+          type: low_dim
+    obs_encoder:
+      rgb_model:
+        _target_: src.models.components.img_encoder.vit.ViT
+        model_name: vit_base_patch16
+        channels: 4
+      use_depth: true

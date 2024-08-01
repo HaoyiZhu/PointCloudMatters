@@ -1,0 +1,49 @@
+# @package _global_
+
+defaults:
+  - rlbench_model:
+  - override /trainer: ddp
+  - override /callbacks: default
+  - override /paths: default
+  - override /hydra: default
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+rlbench_task: null
+
+hydra:
+  run:
+    dir: ${paths.log_dir}/${task_name}/runs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  sweep:
+    dir: ${paths.log_dir}/${task_name}/runs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: ""
+
+paths:
+  log_dir: ${paths.root_dir}/logs/rlbench_dp/${rlbench_task}
+
+data:
+  num_workers: 16
+  pin_memory: false
+  train:
+    task_names:
+      - ${rlbench_task}
+    loop: 100
+    cache_episode: true
+
+trainer:
+  devices: 1
+  max_epochs: 2000
+  check_val_every_n_epoch: 100
+  accelerator: gpu
+  strategy: auto
+
+callbacks:
+  model_checkpoint:
+    monitor: val/loss
+    mode: min
+    filename: "epoch={epoch:03d}-val_loss={val/loss:.4f}"
+    save_top_k: 3
+  early_stopping:
+    monitor: val/loss
+    mode: "min"

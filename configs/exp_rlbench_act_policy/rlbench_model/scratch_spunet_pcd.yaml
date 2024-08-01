@@ -1,0 +1,20 @@
+# @package _global_
+defaults:
+  - override /data: rlbench_act_pcd_dataset
+  - override /model: rlbench_act_pcd_model
+
+task_name: scratch_spunet_pcd
+
+data:
+  batch_size_train: 8
+
+trainer:
+  accumulate_grad_batches: 4
+
+model:
+  policy:
+    backbone:
+      _target_: src.models.components.pcd_encoder.spunet.SpUNet
+      in_channels: 6
+      num_classes: 0
+      pretrained_path: null 

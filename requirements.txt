@@ -29,3 +29,4 @@ imageio==2.34.1
 python-dotenv==1.0.1
 zarr==2.18.2
 diffusers==0.29.0
+git+https://github.com/openai/CLIP.git

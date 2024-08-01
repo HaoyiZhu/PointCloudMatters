@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - override /data: rlbench_act_rgbd_dataset
+  - override /model: rlbench_act_model
+
+task_name: scratch_vit_rgb
+
+model:
+  policy:
+    backbone:
+      _target_: src.models.components.img_encoder.vit.ViT
+      model_name: vit_base_patch16
+      channels: 3

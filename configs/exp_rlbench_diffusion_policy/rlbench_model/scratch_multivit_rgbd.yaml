@@ -1,0 +1,34 @@
+# @package _global_
+defaults:
+  - override /data: rlbench_diffusion_policy_rgbd_dataset
+  - override /model: rlbench_diffusion_policy_model
+
+task_name: scratch_multivit_rgbd
+
+data:
+  batch_size_train: 16
+  train:
+    include_depth: true
+
+trainer:
+  accumulate_grad_batches: 2
+
+model:
+  policy:
+    shape_meta:
+      obs:
+        front_rgb:
+          shape: [3, 128, 128]
+          type: rgb
+        front_depth:
+          shape: [1, 128, 128]
+          type: depth
+        qpos:
+          shape:
+            - ${data.train.action_dim}
+          type: low_dim
+    obs_encoder:
+      rgb_model:
+        _target_:  src.models.components.img_encoder.multivit.MultiViTModel
+        ckpt_path: null
+      use_depth: true
