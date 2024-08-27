@@ -38,7 +38,10 @@ class ManiSkill2DiffusionPolicyBCModule(LightningModule):
 
         # this line allows to access init params with 'self.hparams' attribute
         # also ensures init params will be stored in ckpt
-        self.save_hyperparameters(logger=False)
+        self.save_hyperparameters(
+            logger=False,
+            ignore=["policy", "train_metrics", "val_metrics", "best_val_metrics"],
+        )
         self.policy = policy
 
         # metric objects for calculating and averaging accuracy across batches
@@ -146,7 +149,6 @@ class ManiSkill2DiffusionPolicyBCModule(LightningModule):
                     data["obs"][f"{camera_name}_rgb"].append(torch.from_numpy(rgb))
                     if self.trainer.datamodule.data_train.include_depth:
                         depth = obs_["image"][camera_name]["depth"].astype(float)
-                        depth = depth / (2**10)
                         depth = depth.transpose(2, 0, 1)
                         data["obs"][f"{camera_name}_depth"].append(
                             torch.from_numpy(depth)

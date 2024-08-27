@@ -36,7 +36,10 @@ class ManiSkill2ACTBCModule(LightningModule):
 
         # this line allows to access init params with 'self.hparams' attribute
         # also ensures init params will be stored in ckpt
-        self.save_hyperparameters(logger=False)
+        self.save_hyperparameters(
+            logger=False,
+            ignore=["policy", "train_metrics", "val_metrics", "best_val_metrics"],
+        )
 
         self.policy = policy
 
@@ -145,7 +148,7 @@ class ManiSkill2ACTBCModule(LightningModule):
 
         rewards = []
         success = None
-        if "3steps" in self.hparams.env_id:
+        if self.hparams.env_id == "PegInsertionSide-v0":
             grasp, align = False, False
 
         temp_agg = [
@@ -187,15 +190,8 @@ class ManiSkill2ACTBCModule(LightningModule):
 
                 # channel last -> channel first
                 image_data = torch.einsum("... h w c -> ... c h w", image_data)
-                if self.trainer.datamodule.data_train.only_depth:
-                    image_data = image_data[..., -1, :, :].unsqueeze(1) / (2**10)
                 # normalize image and change dtype to float
                 image_data[..., :3, :, :] = image_data[..., :3, :, :] / 255.0
-                if (
-                    self.trainer.datamodule.data_train.include_depth
-                    and not self.trainer.datamodule.data_train.scale_rgb_only
-                ):
-                    image_data[..., 3:, :, :] = image_data[..., 3:, :, :] / (2**10)
             elif "pointcloud" in obs.keys():
                 coords = obs["pointcloud"]["xyzw"].reshape(-1, 128, 128, 4)[
                     self.trainer.datamodule.data_train.camera_ids
@@ -291,7 +287,7 @@ class ManiSkill2ACTBCModule(LightningModule):
             obs, reward, terminated, truncated, info = self.env.step(
                 pred_action.squeeze(0)
             )
-            if "3steps" in self.hparams.env_id:
+            if self.hparams.env_id == "PegInsertionSide-v0":
                 grasp = info["is_grasped"] | grasp
                 align = info["pre_inserted"] | align
             rewards.append(reward)

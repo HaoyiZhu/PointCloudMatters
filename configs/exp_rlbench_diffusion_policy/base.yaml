@@ -28,7 +28,7 @@ data:
   train:
     task_names:
       - ${rlbench_task}
-    loop: 100
+    loop: 1
     cache_episode: true
 
 trainer:

@@ -52,6 +52,9 @@ class BaseDataModule(LightningDataModule):
 
     def __init__(
         self,
+        train,
+        val,
+        test=None,
         **kwargs,
     ) -> None:
         """Initialize a `MNISTDataModule`.
@@ -66,15 +69,11 @@ class BaseDataModule(LightningDataModule):
 
         # this line allows to access init params with 'self.hparams' attribute
         # also ensures init params will be stored in ckpt
-        self.save_hyperparameters(logger=False)
+        self.save_hyperparameters(logger=False, ignore=["train", "val", "test"])
 
-        self.data_train: Optional[Dataset] = None
-        self.data_val: Optional[Dataset] = None
-        self.data_test: Optional[Dataset] = None
-
-        # self.batch_size_per_device_train = self.hparams.batch_size_train
-        # self.batch_size_per_device_val = self.hparams.batch_size_val
-        # self.batch_size_per_device_test = self.hparams.batch_size_test
+        self.data_train: Optional[Dataset] = train
+        self.data_val: Optional[Dataset] = val
+        self.data_test: Optional[Dataset] = test
 
     def prepare_data(self) -> None:
         """Download data if needed. Lightning ensures that `self.prepare_data()` is called only

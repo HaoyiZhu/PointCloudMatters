@@ -28,34 +28,9 @@ data:
   train:
     task_names:
       - ${rlbench_task}
-    loop: 100
+    loop: 1
     cache_episode: true
-
-# model:
-#   eval:
-#     live_demos: false
-#     data_root: data/rlbench/raw/test
-#     headless: true
-#     episodes_num: 25
-#     max_steps: 400
-#     temporal_agg:
-#       apply: true
-#       action_dim: ${data.train.action_dim}
-#       chunk_size: ${data.train.chunk_size}
-#       k: 0.01
-#     offline: false
-#     camera_view_test:
-#       apply: false
-#       rot_axis: y
-#       rot_angle: 0
-#       transl: [0, 0, 0]
-#     rot_type: ${data.train.rot_type}
-#     cameras: ${data.train.cameras}
-#     include_depth: ${data.train.include_depth}
-#     collision: ${data.train.collision}
-#     data_type: ${data.train.type}
-#     rlbench_task: ${rlbench_task}
-
+    
 trainer:
   devices: 1
   max_epochs: 2000
