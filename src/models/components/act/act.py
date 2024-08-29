@@ -537,7 +537,7 @@ class ACTPCD(ACT):
                     (pcd_dict["coord"], features, pcd_dict["offset"])
                 )
 
-        pcd_pos = self.coord_embedding_sine(coord[: offset[0]])
+        pcd_pos = self.coord_embedding_sine(coord)
         features = rearrange(
             features,
             "(b n) c -> b c 1 n",
@@ -545,7 +545,7 @@ class ACTPCD(ACT):
         )
         pcd_pos = repeat(
             pcd_pos,
-            "n c -> b c 1 n",
+            "(b n) c -> b c 1 n",
             b=features.shape[0],
         )
         return features, pcd_pos

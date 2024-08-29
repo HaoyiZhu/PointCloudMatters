@@ -154,8 +154,8 @@ class ManiSkill2ACTBCModule(LightningModule):
         temp_agg = [
             U.TemporalAgg(
                 apply=self.hparams.temporal_agg,
-                action_dim=self.hparams.policy.action_dim,
-                chunk_size=self.hparams.policy.num_queries,
+                action_dim=self.hparams.action_dim,
+                chunk_size=self.hparams.num_queries,
                 k=0.01,
             )
             for _ in range(self.hparams.get("num_envs", 1))
