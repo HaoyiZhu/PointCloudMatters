@@ -25,5 +25,5 @@ model:
           type: low_dim
     obs_encoder:
       rgb_model:
-        _target_: src.models.components.img_encoder.multivit.MultiMAEModel
+        _target_: src.models.components.img_encoder.multivit.MultiViTModel
       use_depth: true

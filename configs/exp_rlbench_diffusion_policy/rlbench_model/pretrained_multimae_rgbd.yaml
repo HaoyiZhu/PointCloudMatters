@@ -29,7 +29,6 @@ model:
           type: low_dim
     obs_encoder:
       rgb_model:
-        _target_: src.models.components.img_encoder.multivit.MultiMAEModel
+        _target_: src.models.components.img_encoder.multivit.MultiViTModel
         type: MultiViT
-        ckpt_path: /mnt/lustre/hetong/.multivit/multimae-b_98_rgb+-depth-semseg_1600e_multivit-afff3f8c.pth
       use_depth: true

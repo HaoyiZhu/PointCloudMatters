@@ -16,4 +16,4 @@ trainer:
 model:
   policy:
     backbone: 
-      _target_: src.models.components.img_encoder.multivit.MultiMAEModel
+      _target_: src.models.components.img_encoder.multivit.MultiViTModel

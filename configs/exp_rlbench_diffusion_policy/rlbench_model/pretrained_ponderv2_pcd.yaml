@@ -29,7 +29,7 @@ model:
         _target_: src.models.components.pcd_encoder.spunet.SpUNet
         in_channels: 6
         num_classes: 0
-        pretrained_path: /mnt/lustre/share_data/ponder/pointcept/ponderv2-ppt-pretrain-scannet-s3dis-structured3d.pth
+        pretrained_path: checkpoints/ponderv2-ppt-pretrain-scannet-s3dis-structured3d.pth
       pcd_nsample: 16
       pcd_npoints: 2048
       use_mask: false
